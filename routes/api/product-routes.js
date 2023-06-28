@@ -47,15 +47,15 @@ router.post('/', async (req, res) => {
   */
   Product.create(req.body)
     .then((product) => {
-      // if there's product tags, we need to create pairings to bulk create in the ProductTag model
-      if (req.body.tagIds.length) {
-        const productTagIdArr = req.body.tagIds.map((tag_id) => {
+      // if there's product tags, we need to use the ProductTag model
+      if (req.body.tagIds) {
+        const productTagId = req.body.tagIds.map((tag_id) => {
           return {
             product_id: product.id,
             tag_id,
           };
         });
-        return ProductTag.bulkCreate(productTagIdArr);
+        return ProductTag.bulkCreate(productTagId);
       }
       // if no product tags, just respond
       res.status(200).json(product);
@@ -77,7 +77,6 @@ router.put('/:id', (req, res) => {
   })
     .then((product) => {
       if (req.body.tagIds && req.body.tagIds.length) {
-
         ProductTag.findAll({
           where: { product_id: req.params.id }
         }).then((productTags) => {
@@ -91,7 +90,6 @@ router.put('/:id', (req, res) => {
                 tag_id,
               };
             });
-
           // figure out which ones to remove
           const productTagsToRemove = productTags
             .filter(({ tag_id }) => !req.body.tagIds.includes(tag_id))
@@ -103,7 +101,6 @@ router.put('/:id', (req, res) => {
           ]);
         });
       }
-
       return res.json(product);
     })
     .catch((err) => {
@@ -118,7 +115,6 @@ router.delete('/:id', async (req, res) => {
     const productData = await Product.destroy({
       where: { id: req.params.id }
     });
-
     if (!productData) {
       res.status(404).json({ message: 'Invalid id!' });
       return;
